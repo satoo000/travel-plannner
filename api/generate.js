@@ -19,7 +19,7 @@ export default async function handler(request, response) {
   }
 
   // ★変更点2：Gemini APIのエンドポイント(宛先URL)に変更
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
   try {
     // ★変更点3：Gemini APIが要求する形式(payload)に変更
