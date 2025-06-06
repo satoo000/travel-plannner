@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>旅行AIプランナー</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f7fa;
+      padding: 2rem;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 1rem;
+    }
+
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .genre-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .genre-group label {
+      background: #eef1f5;
+      padding: 8px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .genre-group span {
+        display: inline-block; /* 背景色を適用するため */
+        padding: inherit; /* labelのpaddingを継承 */
+        border-radius: inherit; /* labelのradiusを継承 */
+        transition: background-color 0.2s;
+    }
+
+    .genre-group input[type="checkbox"] {
+      display: none;
+    }
+
+    .genre-group input[type="checkbox"]:checked + span {
+      background: #4caf50;
+      color: white;
+    }
+
+    button {
+      margin-top: 2rem;
+      width: 100%;
+      background: #4caf50;
+      color: white;
+      padding: 12px;
+      border: none;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background: #43a047;
+    }
+
+    #result {
+      margin-top: 2rem;
+      white-space: pre-wrap; /* 改行を反映させる */
+      word-wrap: break-word; /* 長い単語を折り返す */
+      background: #f9f9f9;
+      padding: 1rem;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧳 旅行AIプランナー</h1>
+
+    <label for="departure">出発地</label>
+    <input type="text" id="departure" placeholder="例：東京">
+
+    <label for="days">旅行日数</label>
+    <input type="number" id="days" min="1" max="30" value="2">
+
+    <label for="budget">予算（1人あたり・円）</label>
+    <input type="number" id="budget" placeholder="例：50000" step="1000">
+
+    <label>興味のあるテーマ（複数選択可）</label>
+    <div class="genre-group">
+      <label><input type="checkbox" value="温泉"><span>温泉</span></label>
+      <label><input type="checkbox" value="絶景"><span>絶景</span></label>
+      <label><input type="checkbox" value="グルメ"><span>グルメ</span></label>
+      <label><input type="checkbox" value="歴史"><span>歴史</span></label>
+      <label><input type="checkbox" value="自然"><span>自然</span></label>
+      <label><input type="checkbox" value="アニメ聖地巡礼"><span>アニメ</span></label>
+      <label><input type="checkbox" value="デート"><span>デート</span></label>
+    </div>
+
+    <button onclick="generatePlan()">AIで旅行プランを作成する</button>
+
+    <div id="result">ここに旅行プランが表示されます。</div>
+  </div>
+
+  <script>
+    async function generatePlan() {
+      const departure = document.getElementById("departure").value.trim();
+      const days = document.getElementById("days").value;
+      const budget = document.getElementById("budget").value;
+      const genreInputs = document.querySelectorAll(".genre-group input:checked");
+      const themes = Array.from(genreInputs).map(input => input.value).join(", ");
+
+      if (!departure || !days || !budget || !themes) {
+        alert("すべての項目を入力してください。");
+        return;
+      }
+
+      const prompt = `以下の条件で、旅行初心者にも分かりやすい具体的な旅行プランを提案してください。
+
+# 条件
+- 出発地: ${departure}
+- 旅行日数: ${days}日間
+- 予算: 1人あたり約${budget}円
+- 興味のあるテーマ: ${themes}
+
+# 出力形式
+- 1日ごとのスケジュール形式で記述する
+- おすすめの観光スポット、食事、移動手段を具体的に含める
+- 全体のまとめと予算の内訳の目安も最後に記載する`;
+
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerText = "旅行プランを作成中...（AIが最適なプランを考えています。10〜30秒ほどお待ちください）";
+
+      try {
+        const response = await fetch("/api/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ prompt: prompt }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `サーバーエラー: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const content = data.content || "エラー：回答が取得できませんでした。";
+        resultDiv.innerText = content;
+      } catch (error) {
+        resultDiv.innerText = "通信エラーが発生しました。詳細: " + error.message;
+      }
+    }
+  </script>
+</body>
+</html>
